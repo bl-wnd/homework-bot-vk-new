@@ -16,12 +16,6 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 VK_TOKEN = os.getenv('VK_TOKEN')
 VK_USER_ID = os.getenv('VK_USER_ID')
 
-secrets = {
-    'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
-    'VK_TOKEN': VK_TOKEN,
-    'VK_USER_ID': VK_USER_ID
-}
-
 RETRY_PERIOD = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -46,7 +40,12 @@ logger.addHandler(handler)
 
 def check_tokens():
     """Проверяет доступность переменных окружения перед стартом бота."""
-    for key, value in secrets.items():
+    current_secrets = {
+        'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
+        'VK_TOKEN': VK_TOKEN,
+        'VK_USER_ID': VK_USER_ID
+    }
+    for key, value in current_secrets.items():
         logger.debug(f'Проверка "{key}"')
         if not value:
             logger.critical(
@@ -156,8 +155,13 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
             if last_error != message:
-                send_message(vk, message)
-                last_error = message
+                try:
+                    send_message(vk, message)
+                    last_error = message
+                except Exception as send_error:
+                    logger.critical(
+                        f'Не удалось отправить сообщение в ВК: {send_error}'
+                    )
 
         time.sleep(RETRY_PERIOD)
 
